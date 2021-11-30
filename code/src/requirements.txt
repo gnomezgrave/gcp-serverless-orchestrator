@@ -1,0 +1,6 @@
+google-cloud-storage
+apache-beam[gcp]
+google-api-python-client
+oauth2client
+google-cloud-monitoring
+google-auth
