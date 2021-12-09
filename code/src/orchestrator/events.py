@@ -1,6 +1,6 @@
 import time
 from typing import Union
-from .enums import TargetTypes
+from .enums import TargetTypes, TaskStatus
 
 
 class Event:
@@ -11,6 +11,7 @@ class Event:
         self._target_type = kwargs.get('target_type')
         self._execution_id = kwargs.get('execution_id')
         self._run_id = kwargs.get('run_id')
+        self._status = TaskStatus.NEW
 
     @property
     def task_name(self):
@@ -28,8 +29,15 @@ class Event:
     def target_type(self):
         return self._target_type
 
+    @property
+    def status(self):
+        return self._status
+
     def set_run_id(self, run_id):
         self._run_id = run_id
+
+    def set_status(self, status: TaskStatus):
+        self._status = status
 
 
 class Start(Event):
@@ -37,7 +45,7 @@ class Start(Event):
         super(Start, self).__init__(**kwargs)
         self._task_name = 'start'
         self._target_type = TargetTypes.START
-        self._run_id = f"run_{time.time()}"
+        self._run_id = f"run_{int(time.time())}"
 
 
 class DataflowEvent(Event):
@@ -71,6 +79,8 @@ class DataflowEvent(Event):
     def __init__(self, **kwargs):
         super(DataflowEvent, self).__init__(**kwargs)
         event_data = self._event_data
+        # TODO: Call the Dataflow API and extract the correct status
+        self._status = TaskStatus.COMPLETED
         if event_data:
             self._task_name = event_data['resource']['labels']['job_name']
             self._execution_id = event_data['resource']['labels']['job_id']
@@ -105,6 +115,8 @@ class CloudFunctionEvent(Event):
     def __init__(self, **kwargs):
         super(CloudFunctionEvent, self).__init__(**kwargs)
         event_data = self._event_data
+        # TODO: Call the CloudFunctions API and extract the correct status
+        self._status = TaskStatus.COMPLETED
         if event_data:
             self._task_name = event_data['resource']['labels']['function_name']
             self._execution_id = event_data['labels']['execution_id']

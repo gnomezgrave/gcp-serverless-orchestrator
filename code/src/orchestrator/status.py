@@ -4,7 +4,6 @@ from json.decoder import JSONDecodeError
 from google.cloud import storage
 
 from .nodes import Task
-from .enums import TaskStatus
 
 
 class Status:
@@ -26,7 +25,9 @@ class Status:
 
     def _write_json_to_gcs(self, file_path, file_content):
         blob = self._bucket.blob(file_path)
-        blob.upload_from_string(json.dumps(file_content))
+        saved_blob = blob.upload_from_string(json.dumps(file_content))
+        if not saved_blob or not saved_blob.exists():
+            print("Error in saving status file.")
 
 
 class ExecutionStatus(Status):
@@ -44,13 +45,25 @@ class ExecutionStatus(Status):
 
 
 class OrchestrationStatus(Status):
-    def __init__(self, bucket_name, run_id):
+    def __init__(self, bucket_name, run_id=None):
         super(OrchestrationStatus, self).__init__(bucket_name)
         self._prefix = 'runs'
         self._orchestration_status_file = 'orchestration_status.json'
         self._run_id = run_id
+        self._status_data = None
+        self.set_run_id(run_id)
 
-        self._status_data = self._read_status_file()
+    def set_initial_status(self, status_data):
+        self._status_data = status_data
+
+    @property
+    def run_id(self):
+        return self._run_id
+
+    def set_run_id(self, run_id):
+        self._run_id = run_id
+        if run_id:
+            self._status_data = self._read_status_file()
 
     def _get_status_file_path(self):
         return '/'.join([self._prefix, self._run_id, self._orchestration_status_file])
@@ -60,10 +73,11 @@ class OrchestrationStatus(Status):
 
     def update_task_status(self, finished_task: Task):
         task = self._status_data.get(finished_task.node_name, {})
-        task['status'] = finished_task.status.value
-        task['task_name'] = finished_task.target_name
-
+        task = {**task, **finished_task.to_json()}
         self._status_data[finished_task.node_name] = task
+
+    def get_task_status(self, node_name):
+        return self._status_data.get(node_name)
 
     def save_orchestration_status(self):
         blob = self._bucket.blob(self._get_status_file_path())
@@ -71,15 +85,3 @@ class OrchestrationStatus(Status):
 
     def load_orchestration_status(self):
         return self._status_data
-
-    def set_orchestration_status(self, last_processed_date):
-        last_processed_date = f"{last_processed_date.year}-{last_processed_date.month:02}-{last_processed_date.day:02}"
-        blob = self._bucket.get_blob(self._orchestration_status_file)
-        json_content = {
-            'last_processed_date': last_processed_date,
-            'reprocess': "false"
-        }
-        res = blob.upload_from_string(
-            data=json.dumps(json_content),
-            content_type='application/json'
-        )

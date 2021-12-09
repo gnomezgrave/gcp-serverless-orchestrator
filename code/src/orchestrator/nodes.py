@@ -11,6 +11,7 @@ class Node:
         self._next = None
         self._is_end = False
         self._node_type = None
+        self._parent_dag = kwargs.get('parent_dag')
 
     @property
     def node_name(self):
@@ -28,6 +29,10 @@ class Node:
     def is_end(self):
         return self._is_end
 
+    @property
+    def parent_dag(self):
+        return self._parent_dag
+
     def set_next(self, next_node):
         self._next = next_node
 
@@ -38,10 +43,21 @@ class Node:
         print("Not implemented yet!")
         return None
 
+    def to_json(self):
+        output = {
+            'node_name': self.node_name,
+            'node_type': self.node_type.value
+        }
+
+        if self.next:
+            output['next'] = self.next.node_name
+
+        return output
+
 
 class Task(Node):
-    def __init__(self, node_name: str, target_name: str, parameters: dict = None, function=None, **kwargs):
-        super(Task, self).__init__(node_name)
+    def __init__(self, node_name: str, target_name: str, parameters: dict = None, function=None, *args, **kwargs):
+        super(Task, self).__init__(node_name, *args, **kwargs)
         self._node_type = NodeTypes.TASK
         self._target_name = target_name
         self._parameters = parameters
@@ -72,6 +88,14 @@ class Task(Node):
     def set_status(self, status: TaskStatus):
         self._status = status
 
+    def to_json(self):
+        return {
+            **super().to_json(),
+            'target_type': self.target_type.value,
+            'target_name': self.target_name,
+            'status': self.status.value
+        }
+
 
 class Function(Task):
     def __init__(self, *args, **kwargs):
@@ -93,8 +117,7 @@ class CloudFunctionTask(Task):
         headers = self._authenticate()
         try:
             response = requests.request("POST", self._url, json={"test": "hello"}, headers=headers)
-
-            print(response.json(), response.headers)
+            print(response.text, response.headers)
 
             execution = {
                 'execution_id': response.headers['Function-Execution-Id'],
@@ -160,7 +183,12 @@ class DataflowJob(Task):
 
         self._dataflow_region = kwargs.get('region', os.getenv('FUNCTION_REGION'))
         self._gcp_project = kwargs.get('project_id', os.getenv('GCP_PROJECT'))
-        self._job_type = kwargs.get('job_type', 'Flex')
+
+    def to_json(self):
+        return {
+            **super().to_json(),
+            'template_type': self._template_type.value
+        }
 
     def execute(self):
         from googleapiclient.discovery import build
@@ -203,7 +231,7 @@ class DataflowJob(Task):
                 print(f"Exception occurred in executing Task: {self.node_name} --> {e}")
                 traceback.print_exc()
                 execution = {
-                    'execution_id': f"dataflow_{time.time()}",
+                    'execution_id': f"dataflow_{int(time.time())}",
                     'task_name': self.target_name,
                     'node_name': self.node_name,
                     'succeeded': False,
@@ -236,20 +264,67 @@ class Parallel(Node):
         super(Parallel, self).__init__(node_name, *args, **kwargs)
         self._node_type = NodeTypes.PARALLEL
         self._branches = []
+        self._succeeded = 0
+        self._failed = 0
+        self._status = TaskStatus.NEW
 
     @property
     def branches(self):
         return self._branches
 
+    @property
+    def succeeded(self):
+        return self._succeeded
+
+    @property
+    def failed(self):
+        return self._failed
+
+    @property
+    def total_branches(self):
+        return len(self._branches)
+
+    @property
+    def status(self):
+        return self._status
+
+    def set_status(self, status: TaskStatus):
+        self._status = status
+
     def add_branch(self, branch_node):
         self._branches.append(branch_node)
+
+    def to_json(self):
+        return {
+            **super().to_json(),
+            'branches': [{'start': branch.start_node.node_name} for branch in self._branches]
+        }
 
     def execute(self):
         print("Starting Parallel")
         executions = []
         for branch in self._branches:
-            start = branch.get_start_node()
+            start = branch.start_node
             execution = start.execute()
+            succeeded, failed = self._calculate_statuses(execution)
+            if failed:
+                self._failed += 1
+            elif len(execution) == succeeded:
+                self._succeeded += 1
+            else:
+                print(f"Something is off. Counts are not matching: {len(execution)} != {succeeded} + {failed}")
             executions += execution
 
         return executions
+
+    @staticmethod
+    def _calculate_statuses(executions):
+        succeeded = 0
+        failed = 0
+        for execution in executions:
+            if execution[0]['succeeded']:
+                succeeded += 1
+            else:
+                failed += 1
+
+        return succeeded, failed

@@ -7,11 +7,21 @@ class DAG:
         self._parent = parent_step
         self._nodes = nodes
         self._start = start_node_name
-        self.__tasks = {
+        self._tasks = None
+        self._all_nodes = None
+        self._all_tasks = None
+
+    def init(self):
+        self._tasks = {
             node.target_name: node
-            for node_name, node in nodes.items()
+            for node_name, node in self.nodes.items()
             if node.node_type == NodeTypes.TASK
         }
+        self._all_nodes, self._all_tasks = self._get_all_nodes()
+
+    @property
+    def parent_node(self):
+        return self._parent
 
     @property
     def nodes(self):
@@ -19,23 +29,36 @@ class DAG:
 
     @property
     def tasks(self):
-        return self.__tasks
+        return self._tasks
 
-    def get_node_with_task(self, task_name):
-        return self.__tasks.get(task_name)
+    @property
+    def all_tasks(self):
+        return self._all_tasks
 
-    def get_start_node(self):
+    @property
+    def all_nodes(self):
+        return self._all_nodes
+
+    @property
+    def start_node(self):
         return self._nodes.get(self._start)
 
-    def get_all_tasks(self):
-        tasks = dict()
-        self._get_tasks(self, tasks)
-        return tasks
+    def get_node_with_task(self, task_name):
+        return self._tasks.get(task_name)
 
-    def _get_tasks(self, dag, tasks):
+    def _get_all_nodes(self):
+        nodes = {}
+        tasks = {}
+        self._traverse_all_nodes(self, nodes, tasks)
+        return nodes, tasks
+
+    def _traverse_all_nodes(self, dag, nodes, tasks):
         for node_name, node in dag.nodes.items():
+            nodes[node.node_name] = node
+
             if node.node_type == NodeTypes.TASK:
                 tasks[node.target_name] = node
-            elif node.node_type == NodeTypes.PARALLEL:
+
+            if node.node_type == NodeTypes.PARALLEL:
                 for branch in node.branches:
-                    self._get_tasks(branch, tasks)
+                    self._traverse_all_nodes(branch, nodes, tasks)

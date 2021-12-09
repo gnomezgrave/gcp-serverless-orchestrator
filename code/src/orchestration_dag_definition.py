@@ -15,7 +15,7 @@ class OrchestrationDagDefinition:
                 "Step1": {
                     "type": "Task",
                     "target_type": "CloudFunction",
-                    "target_name": "orch-test-1",
+                    "target_name": "orch-test-2",
                     "function": trigger_step_1,
                     "project_id": "trv-hs-src-consolidation-test",
                     "next": "Step2"
@@ -67,30 +67,29 @@ class OrchestrationDagDefinition:
                             "steps": {
                                 "Branch2": {
                                     "type": "Task",
-                                    "target_type": "Dataflow",
-                                    "target_name": "word-count-4",
-                                    "parameters": {
-                                        'input': 'gs://dataflow-samples/shakespeare/kinglear.txt',
-                                        'output': 'gs://wordcount_output_ppeiris/output/out',
-                                        'temp_location': 'gs://wordcount_output_ppeiris/temp/output',
-                                        'subnetwork': 'https://www.googleapis.com/compute/v1/projects/shared-vpc-182609/regions/europe-west4/subnetworks/trv-hs-playground-eu-w4',
-                                        'setup_file': '/dataflow/template/setup.py'
-                                    },
+                                    "target_type": "CloudFunction",
+                                    "target_name": "orch-test-3",
+                                    "function": stop,
                                     "project_id": "trv-hs-src-consolidation-test",
-                                    "container_gcs_path": 'gs://flex-templates-ppeiris/ppeiris/python_command_spec.json',
-                                    "region": "europe-west4",
-                                    "function": trigger_step_3,
                                     "end": True
                                 }
                             }
                         }
                     ],
+                    "next": "Int"
+                },
+                "Int": {
+                    "type": "Task",
+                    "target_type": "CloudFunction",
+                    "target_name": "orch-test-4",
+                    "function": stop,
+                    "project_id": "trv-hs-src-consolidation-test",
                     "next": "End"
                 },
                 "End": {
                     "type": "Task",
-                    "target_type": "Function",
-                    "target_name": "end",
+                    "target_type": "CloudFunction",
+                    "target_name": "orch-test-5",
                     "function": stop,
                     "project_id": "trv-hs-src-consolidation-test",
                     "end": True

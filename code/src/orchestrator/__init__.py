@@ -3,5 +3,5 @@ from .nodes import Node, Task, Function, CloudFunctionTask, DataflowJob, Paralle
 from .dag import DAG
 from .node_factory import NodeFactory
 from .dag_builder import DAGBuilder
-from .status import Status, OrchestrationStatus, ExecutionStatus
+from .status import OrchestrationStatus, ExecutionStatus
 from .events import Event, EventsFactory, DataflowEvent, CloudFunctionEvent

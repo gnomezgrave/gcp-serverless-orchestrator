@@ -18,28 +18,44 @@ data "archive_file" "orchestrator_file" {
     filename = "requirements.txt"
   }
   source {
-    content  = file("${path.module}/../../code/src/orchestration_dag.py")
-    filename = "orchestration_dag.py"
+    content  = file("${path.module}/../../code/src/__init__.py")
+    filename = "__init__.py"
   }
   source {
-    content  = file("${path.module}/../../code/src/orchestration_status.py")
-    filename = "orchestration_status.py"
+    content  = file("${path.module}/../../code/src/orchestrator/__init__.py")
+    filename = "orchestrator/__init__.py"
   }
   source {
-    content  = file("${path.module}/../../code/src/orchestration_executor.py")
-    filename = "orchestration_executor.py"
+    content  = file("${path.module}/../../code/src/orchestrator/dag.py")
+    filename = "orchestrator/dag.py"
   }
   source {
     content  = file("${path.module}/../../code/src/orchestration_dag_definition.py")
     filename = "orchestration_dag_definition.py"
   }
   source {
-    content  = file("${path.module}/../../code/src/metrics.py")
-    filename = "metrics.py"
+    content  = file("${path.module}/../../code/src/orchestrator/nodes.py")
+    filename = "orchestrator/nodes.py"
   }
   source {
-    content  = file("${path.module}/../../code/src/task.py")
-    filename = "task.py"
+    content  = file("${path.module}/../../code/src/orchestrator/node_factory.py")
+    filename = "orchestrator/node_factory.py"
+  }
+  source {
+    content  = file("${path.module}/../../code/src/orchestrator/events.py")
+    filename = "orchestrator/events.py"
+  }
+  source {
+    content  = file("${path.module}/../../code/src/orchestrator/dag_builder.py")
+    filename = "orchestrator/dag_builder.py"
+  }
+  source {
+    content  = file("${path.module}/../../code/src/orchestrator/enums.py")
+    filename = "orchestrator/enums.py"
+  }
+  source {
+    content  = file("${path.module}/../../code/src/orchestrator/status.py")
+    filename = "orchestrator/status.py"
   }
 }
 

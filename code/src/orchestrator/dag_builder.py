@@ -40,8 +40,9 @@ class DAGBuilder:
     def _build_dag(self, sub_dag, parent_node=None):
         start_step_name = sub_dag['start']
         nodes = dict()
+        dag = DAG(nodes, start_step_name, parent_node)
         for step_name, step in sub_dag['steps'].items():
-            node = self._get_node(step_name, step)
+            node = self._get_node(step_name, step, dag)
 
             if node.node_type == NodeTypes.PARALLEL:
                 branches = step['branches']
@@ -51,18 +52,19 @@ class DAGBuilder:
             next_step_name = step.get('next')
             if next_step_name:
                 next_step = self._steps[next_step_name]
-                next_node = self._get_node(next_step_name, next_step)
+                next_node = self._get_node(next_step_name, next_step, dag)
                 node.set_next(next_node)
 
             nodes[node.node_name] = node
 
-        return DAG(nodes, start_step_name, parent_node)
+        dag.init()
+        return dag
 
-    def _get_node(self, step_name, step):
+    def _get_node(self, step_name, step, parent_dag):
         if step_name in self._nodes:
             node = self._nodes[step_name]
         else:
-            node = NodeFactory.create_node(step)
+            node = NodeFactory.create_node(step, parent_dag)
             self._nodes[step_name] = node
 
         return node
