@@ -118,6 +118,7 @@ Here is a sample DAG.
 Above DAG will create an execution plan as below.
 
 ![SampleDAG](docs/Sample_DAG.png)
+
 :pencil: **NOTE:** This is just an illustration to explain the flow, and this component doesn't create such a diagram (at the moment).
 
 According to this plan:
