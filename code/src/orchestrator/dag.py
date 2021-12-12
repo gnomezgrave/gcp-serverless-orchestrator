@@ -3,10 +3,12 @@ from .enums import NodeTypes
 
 
 class DAG:
-    def __init__(self, nodes: dict, start_node_name: str, parent_step: Node = None):
-        self._parent = parent_step
+    def __init__(self, nodes: dict, start_node_name: str, parent_step: Node, exec_status, orchestration_status):
         self._nodes = nodes
         self._start = start_node_name
+        self._parent = parent_step
+        self._exec_status = exec_status
+        self._orchestration_status = orchestration_status
         self._tasks = None
         self._all_nodes = None
         self._all_tasks = None
@@ -22,6 +24,14 @@ class DAG:
     @property
     def parent_node(self):
         return self._parent
+
+    @property
+    def exec_status(self):
+        return self._exec_status
+
+    @property
+    def orchestration_status(self):
+        return self._orchestration_status
 
     @property
     def nodes(self):

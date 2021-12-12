@@ -1,17 +1,16 @@
 import json
 from json.decoder import JSONDecodeError
 
-from google.cloud import storage
-
 from .nodes import Task
 
 
 class Status:
-    def __init__(self, bucket_name):
-        self._bucket_name = bucket_name
-        self._bucket = storage.Client().get_bucket(bucket_name)
+    def __init__(self, bucket):
+        self._bucket = bucket
 
     def _read_json_from_gcs(self, file_path):
+        # with open(file_path) as file:
+        #     json_string = file.read()
         blob = self._bucket.get_blob(file_path)
         if not blob:
             return {}
@@ -25,8 +24,8 @@ class Status:
 
     def _write_json_to_gcs(self, file_path, file_content):
         blob = self._bucket.blob(file_path)
-        saved_blob = blob.upload_from_string(json.dumps(file_content))
-        if not saved_blob or not saved_blob.exists():
+        blob.upload_from_string(json.dumps(file_content))
+        if not blob or not blob.exists():
             print("Error in saving status file.")
 
 

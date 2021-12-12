@@ -108,7 +108,6 @@ class CloudFunctionTask(Task):
         import os
         super(CloudFunctionTask, self).__init__(*args, **kwargs)
         self._target_type = TargetTypes.CLOUD_FUNCTION
-        print(kwargs)
         self._gcp_project = kwargs.get('project_id', os.getenv('GCP_PROJECT'))
         self._url = f"https://europe-west1-{self._gcp_project}.cloudfunctions.net/{self.target_name}"
 
@@ -138,7 +137,11 @@ class CloudFunctionTask(Task):
             }
             self.set_status(TaskStatus.FAILED)
 
-        return [(execution, self)]
+        execution['run_id'] = self.parent_dag.orchestration_status.run_id
+
+        self.parent_dag.exec_status.save_execution(execution)
+        self.parent_dag.orchestration_status.update_task_status(self)
+        return execution, self
 
     def _authenticate(self):
         import requests
@@ -238,7 +241,13 @@ class DataflowJob(Task):
                     'response': str(e).replace('"', "'")
                 }
                 self.set_status(TaskStatus.FAILED)
-            return [(execution, self)]
+
+            execution['run_id'] = self.parent_dag.orchestration_status.run_id
+
+            self.parent_dag.exec_status.save_execution(execution)
+            self.parent_dag.orchestration_status.update_task_status(self)
+
+            return execution, self
 
         elif self._template_type == DataflowTemplateType.CLASSIC:
             request = dataflow.projects().templates().launch(
@@ -306,15 +315,7 @@ class Parallel(Node):
         for branch in self._branches:
             start = branch.start_node
             execution = start.execute()
-            succeeded, failed = self._calculate_statuses(execution)
-            if failed:
-                self._failed += 1
-            elif len(execution) == succeeded:
-                self._succeeded += 1
-            else:
-                print(f"Something is off. Counts are not matching: {len(execution)} != {succeeded} + {failed}")
-            executions += execution
-
+            self.parent_dag.exec_status.save_execution(execution[0])
         return executions
 
     @staticmethod

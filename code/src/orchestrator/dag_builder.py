@@ -1,14 +1,16 @@
-from .enums import NodeTypes
+from .enums import NodeTypes, TaskStatus
 from .node_factory import NodeFactory
 from .dag import DAG
 
 
 class DAGBuilder:
 
-    def __init__(self, dag):
+    def __init__(self, dag, exec_status, orchestration_status):
         self._dag = dag
         self._steps = None
         self._nodes = dict()
+        self._exec_status = exec_status
+        self._orchestration_status = orchestration_status
 
     def _build(self, node, functions_list):
         steps = node['steps']
@@ -40,7 +42,7 @@ class DAGBuilder:
     def _build_dag(self, sub_dag, parent_node=None):
         start_step_name = sub_dag['start']
         nodes = dict()
-        dag = DAG(nodes, start_step_name, parent_node)
+        dag = DAG(nodes, start_step_name, parent_node, self._exec_status, self._orchestration_status)
         for step_name, step in sub_dag['steps'].items():
             node = self._get_node(step_name, step, dag)
 
@@ -67,9 +69,14 @@ class DAGBuilder:
             node = NodeFactory.create_node(step, parent_dag)
             self._nodes[step_name] = node
 
+            node_orch = self._orchestration_status.get_task_status(step_name)
+            if node_orch and 'status' in node_orch:
+                node.set_status(TaskStatus(node_orch['status']))
+
         return node
 
     def build_dag(self):
+        # We need to extract the steps separately to ensure we have all the nodes before building the DAG
         self._steps = self._extract_steps(self._dag)
         dag = self._build_dag(self._dag)
         return dag

@@ -14,6 +14,10 @@ data "archive_file" "orchestrator_file" {
     filename = "main.py"
   }
   source {
+    content  = file("${path.module}/../../code/src/orchestration_dag_definition.py")
+    filename = "orchestration_dag_definition.py"
+  }
+  source {
     content  = file("${path.module}/../../code/src/requirements.txt")
     filename = "requirements.txt"
   }
@@ -30,10 +34,6 @@ data "archive_file" "orchestrator_file" {
     filename = "orchestrator/dag.py"
   }
   source {
-    content  = file("${path.module}/../../code/src/orchestration_dag_definition.py")
-    filename = "orchestration_dag_definition.py"
-  }
-  source {
     content  = file("${path.module}/../../code/src/orchestrator/nodes.py")
     filename = "orchestrator/nodes.py"
   }
@@ -48,6 +48,10 @@ data "archive_file" "orchestrator_file" {
   source {
     content  = file("${path.module}/../../code/src/orchestrator/dag_builder.py")
     filename = "orchestrator/dag_builder.py"
+  }
+  source {
+    content  = file("${path.module}/../../code/src/orchestrator/dag_executor.py")
+    filename = "orchestrator/dag_executor.py"
   }
   source {
     content  = file("${path.module}/../../code/src/orchestrator/enums.py")
@@ -85,6 +89,7 @@ resource "google_cloudfunctions_function" "orchestrator_function" {
   timeout               = 60
   entry_point           = "on_pub_sub_event"
   runtime               = "python37"
+  max_instances         = 1
   event_trigger {
     event_type         = "google.pubsub.topic.publish"
     resource           = google_pubsub_topic.orchestrator_dataflow_events.name
