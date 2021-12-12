@@ -89,11 +89,14 @@ class DAGExecutor:
                         parent_node.set_status(TaskStatus.COMPLETED)
                         next_node = parent_node.next
                     else:
-                        # If this is the END of the DAG, there is nothing to do.                    parent_node.set_status(TaskStatus.RUNNING)
+                        # If this is the END of the DAG, there is nothing to do.
+                        parent_node.set_status(TaskStatus.PENDING)
                         next_node = None
 
             else:
                 next_node = node.next
+
+        self._orchestration_status.save_orchestration_status()
 
         if not next_node:
             print(f"No next node found.")
@@ -101,6 +104,5 @@ class DAGExecutor:
 
         print(f"Next node: {next_node.node_name}")
 
-        # TODO: Fix saving the executions
         next_node.execute()
         self._orchestration_status.save_orchestration_status()

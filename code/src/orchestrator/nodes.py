@@ -105,11 +105,11 @@ class Function(Task):
 
 class CloudFunctionTask(Task):
     def __init__(self, *args, **kwargs):
-        import os
         super(CloudFunctionTask, self).__init__(*args, **kwargs)
         self._target_type = TargetTypes.CLOUD_FUNCTION
         self._gcp_project = kwargs.get('project_id', os.getenv('GCP_PROJECT'))
-        self._url = f"https://europe-west1-{self._gcp_project}.cloudfunctions.net/{self.target_name}"
+        self._region = kwargs.get('region', os.getenv('FUNCTION_REGION'))
+        self._url = f"https://{self._region}-{self._gcp_project}.cloudfunctions.net/{self.target_name}"
 
     def execute(self):
         import requests
@@ -125,7 +125,7 @@ class CloudFunctionTask(Task):
                 'succeeded': True,
                 'response': response.text
             }
-            self.set_status(TaskStatus.COMPLETED)
+            self.set_status(TaskStatus.PENDING)
 
         except Exception as e:
             traceback.print_exc()
@@ -219,36 +219,6 @@ class DataflowJob(Task):
                     }
                 }
             )
-            try:
-                response = request.execute()
-                print(response)
-                execution = {
-                    'execution_id': response['job']['id'],
-                    'task_name': self.target_name,
-                    'node_name': self.node_name,
-                    'succeeded': True,
-                    'response': response
-                }
-                self.set_status(TaskStatus.COMPLETED)
-            except Exception as e:
-                print(f"Exception occurred in executing Task: {self.node_name} --> {e}")
-                traceback.print_exc()
-                execution = {
-                    'execution_id': f"dataflow_{int(time.time())}",
-                    'task_name': self.target_name,
-                    'node_name': self.node_name,
-                    'succeeded': False,
-                    'response': str(e).replace('"', "'")
-                }
-                self.set_status(TaskStatus.FAILED)
-
-            execution['run_id'] = self.parent_dag.orchestration_status.run_id
-
-            self.parent_dag.exec_status.save_execution(execution)
-            self.parent_dag.orchestration_status.update_task_status(self)
-
-            return execution, self
-
         elif self._template_type == DataflowTemplateType.CLASSIC:
             request = dataflow.projects().templates().launch(
                 projectId=self._gcp_project,
@@ -258,14 +228,38 @@ class DataflowJob(Task):
                     'parameters': self._parameters,
                 }
             )
+        else:
+            raise Exception(f"Unexpected Dataflow job type: {self._template_type}")
 
-            try:
-                response = request.execute()
-                print(response)
-                return True
-            except Exception as e:
-                print(f"Exception occurred in executing Task: {self.node_name} --> {e}")
-                return False
+        try:
+            response = request.execute()
+            print(response)
+            execution = {
+                'execution_id': response['job']['id'],
+                'task_name': self.target_name,
+                'node_name': self.node_name,
+                'succeeded': True,
+                'response': response
+            }
+            self.set_status(TaskStatus.PENDING)
+        except Exception as e:
+            print(f"Exception occurred in executing Task: {self.node_name} --> {e}")
+            traceback.print_exc()
+            execution = {
+                'execution_id': f"dataflow_{int(time.time())}",
+                'task_name': self.target_name,
+                'node_name': self.node_name,
+                'succeeded': False,
+                'response': str(e).replace('"', "'")
+            }
+            self.set_status(TaskStatus.FAILED)
+
+        execution['run_id'] = self.parent_dag.orchestration_status.run_id
+
+        self.parent_dag.exec_status.save_execution(execution)
+        self.parent_dag.orchestration_status.update_task_status(self)
+
+        return execution, self
 
 
 class Parallel(Node):

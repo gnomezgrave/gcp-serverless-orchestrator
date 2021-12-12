@@ -32,6 +32,6 @@ class DataflowTemplateType(Enum, metaclass=EnumTypesMeta):
 
 class TaskStatus(Enum, metaclass=EnumTypesMeta):
     NEW = 'New'
-    RUNNING = 'Running'
+    PENDING = 'Running'
     COMPLETED = 'Completed'
     FAILED = 'Failed'
