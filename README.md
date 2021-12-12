@@ -7,8 +7,7 @@ Dataflow jobs at the moment, but more services will come in the future.
 
 ## High-level Concept
 
-:pencil: **NOTE:**  
-The concept is thoroughly explained in [my blog article](https://gnomezgrave.com/2020/12/04/how-to-orchestrate-dataflow-jobs-with-cloud-functions/).
+:pencil: **NOTE:** The concept is thoroughly explained in [my blog article](https://gnomezgrave.com/2020/12/04/how-to-orchestrate-dataflow-jobs-with-cloud-functions/).
 
 This entire orchestration process is based on Cloud Logging service and the logs each service puts at the end of an
 execution.
@@ -117,7 +116,7 @@ Here is a sample DAG.
 
 Above DAG will create an execution plan as below.
 
-![SampleDAG](docs/Sample_DAG.png)
+![Sample DAG](docs/Sample_DAG.png)
 
 :pencil: **NOTE:** This is just an illustration to explain the flow, and this component doesn't create such a diagram (at the moment).
 
@@ -159,8 +158,9 @@ You need to change two main aspects of this project to make it work for you: cod
       # Creates the executor with the storage bucket, and executes it using the log line it received.
       DAGExecutor(dag_definition=OrchestrationDagDefinition.get_dag(), bucket_name=status_bucket_name).execute(data=data)
   ```
-:pencil: **NOTE:**  
-Make sure you have defined all the requirements you need in a `requirements.txt`, including the ones that are defined in `/code/src/requirements.txt`.
+
+  :pencil: **NOTE:**  
+  Make sure you have defined all the requirements you need in a `requirements.txt`, including the ones that are defined in `/code/src/requirements.txt`.
 
 
 It's that simple! The `DAGExecutor` class will handle all the parsing and execution of your jobs for you!
@@ -196,10 +196,11 @@ We use `terraform` to define our resources, and they're defined inside the `infr
 
 :fire: **IMPORTANT:**
 
-Do NOT remove the filter for the orchestration Cloud Function in the log sinks! It will create an infinite cycle of executions because the Orchestrator will react to its own execution end. Even if you want to explicitly define the Cloud Functions of interest, do NOT remove it.
+Do **NOT** remove the filter for the orchestration Cloud Function in the log sinks!   
+It will create an infinite cycle of executions because the Orchestrator will react to its own execution end. Even if you want to explicitly define the Cloud Functions to filter, do NOT remove the filter exemption for the Orchestrator.
 
 ![Log Sink for CF](docs/cf_log_sink.png)
 
-Make sure you add this filter explicitly for ALL the Log Sinks you create that listens to Cloud Functions.
+Make sure you add this filter explicitly for **ALL** the Log Sinks you create that listens to Cloud Functions.
 
 
