@@ -136,10 +136,3 @@ class EventsFactory:
         else:
             return None
 
-    @staticmethod
-    def create_from_execution(execution: dict):
-        target_type = TargetTypes(execution['target_type'])
-        targets = {TargetTypes.CLOUD_FUNCTION: CloudFunctionEvent, TargetTypes.DATAFLOW_JOB: DataflowEvent}
-        target_class = targets[target_type]
-        return target_class(task_name=execution['task_name'], target_type=target_type.value, run_id=execution['run_id'],
-                            execution_id=execution['execution_id'])

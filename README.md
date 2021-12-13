@@ -38,7 +38,7 @@ Here is a sample log line pushed to Cloud Logging when a Cloud Function is finis
 ```
 
 These logs are captured by a [Cloud Logs Router](https://cloud.google.com/logging/docs/routing/overview) ([google_logging_project_sink](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_sink)) and they're pushed to a Cloud Pub/Sub topic, that triggers the Orchestration function. Then it identifies which job was finished and extracts the next job(s) according to
-a defined flow: DAG, and automatically triggers the next. 
+a defined flow: DAG (Directed Acyclic Graph), and automatically triggers the next. 
 
 Here is a sample DAG.
 
