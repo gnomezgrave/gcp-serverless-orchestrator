@@ -48,70 +48,70 @@ Here is a sample DAG.
 {
   "start": "Init",
   "steps": {
-  "Init": {
-    "type": "Task",
-    "target_type": "CloudFunction",
-    "target_name": "orch-test-1",
-    "project_id": "ppeiris-orchestration-test",
-    "region": "europe-west1",
-    "next": "Step1"
-  },
-  "Step1": {
-    "type": "Task",
-    "target_type": "CloudFunction",
-    "target_name": "orch-test-2",
-    "project_id": "ppeiris-orchestration-test",
-    "region": "europe-west1",
-    "next": "Step2"
-  },
-  "Step2": {
-    "type": "Parallel",
-    "branches": [
-    {
-      "start": "Branch1",
-      "steps": {
-      "Branch1": {
-        "type": "Task",
-        "target_type": "Dataflow",
-        "target_name": "word-count-demo",
-        "parameters": {
-        'input': 'gs://dataflow-samples/shakespeare/kinglear.txt',
-        'output': 'gs://wordcount_output_ppeiris/output/out',
-        'temp_location': 'gs://wordcount_output_ppeiris/temp/output',
-        'subnetwork': 'https://www.googleapis.com/compute/v1/projects/shared-vpc-x/regions/europe-west4/subnetworks/my-sub-network',
-        'setup_file': '/dataflow/template/setup.py'
-        },
-        "project_id": "ppeiris-orchestration-test",
-        "container_gcs_path": 'gs://my-flex-templates/ppeiris/python_command_spec.json',
-        "region": "europe-west4",
-        "end": True
-      }
-      }
+    "Init": {
+      "type": "Task",
+      "target_type": "CloudFunction",
+      "target_name": "orch-test-1",
+      "project_id": "ppeiris-orchestration-test",
+      "region": "europe-west1",
+      "next": "Step1"
     },
-    {
-      "start": "Branch2",
-      "steps": {
-      "Branch2": {
-        "type": "Task",
-        "target_type": "CloudFunction",
-        "target_name": "orch-test-3",
-        "project_id": "ppeiris-orchestration-test",
-        "region": "europe-west1",
-        "end": True
-      }
-      }
-    }
-    ],
-    "next": "End"
-  },
-  "End": {
-    "type": "Task",
-    "target_type": "CloudFunction",
-    "target_name": "orch-test-4",
-    "project_id": "ppeiris-orchestration-test",
-    "region": "europe-west1",
-    "end": True
-  },
+    "Step1": {
+      "type": "Task",
+      "target_type": "CloudFunction",
+      "target_name": "orch-test-2",
+      "project_id": "ppeiris-orchestration-test",
+      "region": "europe-west1",
+      "next": "Step2"
+    },
+    "Step2": {
+      "type": "Parallel",
+      "branches": [
+        {
+          "start": "Branch1",
+          "steps": {
+            "Branch1": {
+                "type": "Task",
+                "target_type": "Dataflow",
+                "target_name": "word-count-demo",
+                "parameters": {
+                'input': 'gs://dataflow-samples/shakespeare/kinglear.txt',
+                'output': 'gs://wordcount_output_ppeiris/output/out',
+                'temp_location': 'gs://wordcount_output_ppeiris/temp/output',
+                'subnetwork': 'https://www.googleapis.com/compute/v1/projects/shared-vpc-x/regions/europe-west4/subnetworks/my-sub-network',
+                'setup_file': '/dataflow/template/setup.py'
+              },
+              "project_id": "ppeiris-orchestration-test",
+              "container_gcs_path": 'gs://my-flex-templates/ppeiris/python_command_spec.json',
+              "region": "europe-west4",
+              "end": True
+            }
+          }
+        },
+        {
+          "start": "Branch2",
+          "steps": {
+            "Branch2": {
+              "type": "Task",
+              "target_type": "CloudFunction",
+              "target_name": "orch-test-3",
+              "project_id": "ppeiris-orchestration-test",
+              "region": "europe-west1",
+              "end": True
+            }
+          }
+        }
+      ],
+      "next": "End"
+    },
+    "End": {
+      "type": "Task",
+      "target_type": "CloudFunction",
+      "target_name": "orch-test-4",
+      "project_id": "ppeiris-orchestration-test",
+      "region": "europe-west1",
+      "end": True
+    },
   }
 }
 ```
@@ -149,16 +149,15 @@ You need to change two main aspects of this project to make it work for you: cod
   from orchestrator import DAGExecutor
   from orchestration_dag_definition import OrchestrationDagDefinition
   
-  
   def on_pub_sub_event(pub_sub_event, context):
-  data = base64.b64decode(pub_sub_event['data']).decode('utf-8')
-  data = json.loads(data)
+    data = base64.b64decode(pub_sub_event['data']).decode('utf-8')
+    data = json.loads(data)
   
-  # Make sure this bucket exists and your code has read/write access.
-  status_bucket_name = os.environ.get('STATUS_BUCKET', 'orchestration-status-bucket')
+    # Make sure this bucket exists and your code has read/write access.
+    status_bucket_name = os.environ.get('STATUS_BUCKET', 'orchestration-status-bucket')
   
-  # Creates the executor with the storage bucket, and executes it using the log line it received.
-  DAGExecutor(dag_definition=OrchestrationDagDefinition.get_dag(), bucket_name=status_bucket_name).execute(data=data)
+    # Creates the executor with the storage bucket, and executes it using the log line it received.
+    DAGExecutor(dag_definition=OrchestrationDagDefinition.get_dag(), bucket_name=status_bucket_name).execute(data=data)
   ```
 
   :pencil: **NOTE:**  
