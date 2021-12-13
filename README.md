@@ -120,7 +120,7 @@ Above DAG will create an execution plan as below.
 
 :pencil: **NOTE:** This is just an illustration to explain the flow, and this component doesn't create such a diagram (at the moment).
 
-According to this plan:
+According to this orchestration plan:
 
 * It will first trigger the **Init** Cloud Function.
 * After it's completed, it will then trigger the Dataflow job defined by **Step1**.
@@ -165,7 +165,9 @@ You need to change two main aspects of this project to make it work for you: cod
 
 It's that simple! The `DAGExecutor` class will handle all the parsing and execution of your jobs for you!
 
-Well, you still need to define a DAG definition as a Python `dict` for your orchestration flow as defined in [OrchestrationDagDefinition](code/src/orchestration_dag_definition.py) or as shown above, along with the complementary functions. The syntax for the DAG will be explained in a separate section. 
+Well, you still need to define a DAG definition as a Python `dict` for your orchestration flow as defined in [OrchestrationDagDefinition](code/src/orchestration_dag_definition.py) or as shown above, along with the complementary functions. 
+
+The syntax for the DAG will be explained in a separate section. 
 
 
 ### Infrastructure
@@ -204,3 +206,6 @@ It will create an infinite cycle of executions because the Orchestrator will rea
 Make sure you add this filter explicitly for **ALL** the Log Sinks you create that listens to Cloud Functions.
 
 
+## Design
+
+Check [this document](code/src/orchestrator/README.md) for more information.
