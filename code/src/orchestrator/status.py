@@ -9,8 +9,6 @@ class Status:
         self._bucket = bucket
 
     def _read_json_from_gcs(self, file_path):
-        # with open(file_path) as file:
-        #     json_string = file.read()
         blob = self._bucket.get_blob(file_path)
         if not blob:
             return {}
@@ -60,6 +58,7 @@ class OrchestrationStatus(Status):
         return self._run_id
 
     def set_run_id(self, run_id):
+        # When the run_id is set, it will load the status from the corresponding file.
         self._run_id = run_id
         if run_id:
             self._status_data = self._read_status_file()
@@ -82,5 +81,3 @@ class OrchestrationStatus(Status):
         blob = self._bucket.blob(self._get_status_file_path())
         blob.upload_from_string(json.dumps(self._status_data))
 
-    def load_orchestration_status(self):
-        return self._status_data

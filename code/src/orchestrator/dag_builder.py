@@ -13,6 +13,7 @@ class DAGBuilder:
         self._orchestration_status = orchestration_status
 
     def _build(self, node, functions_list):
+        # This function recursively builds the DAG and the child DAGs.
         steps = node['steps']
         for k, v in steps.items():
             node_type = v['type']
@@ -40,6 +41,7 @@ class DAGBuilder:
         return step_names
 
     def _build_dag(self, sub_dag, parent_node=None):
+        # This function recursively creates DAGs according to the DAG definition.
         start_step_name = sub_dag['start']
         nodes = dict()
         dag = DAG(nodes, start_step_name, parent_node, self._exec_status, self._orchestration_status)
@@ -49,8 +51,10 @@ class DAGBuilder:
             if node.node_type == NodeTypes.PARALLEL:
                 branches = step['branches']
                 for branch in branches:
+                    # Create a new DAG for each branch
                     node.add_branch(self._build_dag(branch, node))
 
+            # Set the next Node for the current Node
             next_step_name = step.get('next')
             if next_step_name:
                 next_step = self._steps[next_step_name]
@@ -59,24 +63,28 @@ class DAGBuilder:
 
             nodes[node.node_name] = node
 
+        # We need to explicitly call the init() of the DAG.
         dag.init()
         return dag
 
     def _get_node(self, step_name, step, parent_dag):
+        # This function acts as a cache for Nodes, and returns the already created Node if there is,
+        # else creates a new one.
         if step_name in self._nodes:
             node = self._nodes[step_name]
         else:
             node = NodeFactory.create_node(step, parent_dag)
             self._nodes[step_name] = node
 
-            node_orch = self._orchestration_status.get_task_status(step_name)
-            if node_orch and 'status' in node_orch:
-                node.set_status(TaskStatus(node_orch['status']))
+            # Set the Task status extracted from the Orchestration Status file.
+            orchestration_node = self._orchestration_status.get_task_status(step_name)
+            if orchestration_node and 'status' in orchestration_node:
+                node.set_status(TaskStatus(orchestration_node['status']))
 
         return node
 
     def build_dag(self):
-        # We need to extract the steps separately to ensure we have all the nodes before building the DAG
+        # We need to extract the steps separately to ensure we have all the nodes before building the DAG.
         self._steps = self._extract_steps(self._dag)
         dag = self._build_dag(self._dag)
         return dag

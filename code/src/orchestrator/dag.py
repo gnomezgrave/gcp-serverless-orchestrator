@@ -14,6 +14,9 @@ class DAG:
         self._all_tasks = None
 
     def init(self):
+        # We need to explicitly call this function to initialize the DAG.
+        # This was done because we should already know all the nodes in the DAG
+        # to create the two attributes _all_nodes and _all_tasks.
         self._tasks = {
             node.target_name: node
             for node_name, node in self.nodes.items()

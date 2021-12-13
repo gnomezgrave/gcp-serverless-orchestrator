@@ -177,6 +177,7 @@ class DataflowJob(Task):
         super(DataflowJob, self).__init__(*args, **kwargs)
         self._target_type = TargetTypes.DATAFLOW_JOB
 
+        # We determine the type of the Dataflow job depending on the parameter we pass for the template location.
         if 'container_gcs_path' in kwargs:
             self._template_path = kwargs['container_gcs_path']
             self._template_type = DataflowTemplateType.FLEX
@@ -198,11 +199,10 @@ class DataflowJob(Task):
         from oauth2client.client import GoogleCredentials
 
         credentials = GoogleCredentials.get_application_default()
-        # cache_discovery should be set to False to avoid errors
         dataflow = build('dataflow', 'v1b3', credentials=credentials, cache_discovery=False)
+
         # TODO: Create subclasses for this.
         if self._template_type == DataflowTemplateType.FLEX:
-
             request = dataflow.projects().locations().flexTemplates().launch(
                 projectId=self._gcp_project,
                 location=self._dataflow_region,
@@ -305,21 +305,9 @@ class Parallel(Node):
 
     def execute(self):
         print("Starting Parallel")
-        executions = []
+        # Execute the Start Node of each branch, and then save the Execution Status for each of them.
         for branch in self._branches:
             start = branch.start_node
             execution = start.execute()
             self.parent_dag.exec_status.save_execution(execution[0])
-        return executions
-
-    @staticmethod
-    def _calculate_statuses(executions):
-        succeeded = 0
-        failed = 0
-        for execution in executions:
-            if execution[0]['succeeded']:
-                succeeded += 1
-            else:
-                failed += 1
-
-        return succeeded, failed
+        return None
